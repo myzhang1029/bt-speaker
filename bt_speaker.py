@@ -36,12 +36,15 @@ class PipedSBCAudioSinkWithAlsaVolumeControl(SBCAudioSink):
 
     def startup(self):
         # Start process
-        self.process = subprocess.Popen(
-            config.get('bt_speaker', 'play_command'),
-            shell=True,
-            bufsize=2560,
-            stdin=subprocess.PIPE
-        )
+        if config.has_option('bt_speaker', 'play_command'):
+            self.process = subprocess.Popen(
+                config.get('bt_speaker', 'play_command'),
+                shell=True,
+                bufsize=2560,
+                stdin=subprocess.PIPE
+            )
+        else:
+            self.process = None
 
         if config.getboolean('alsa', 'enabled'):
             # Use first available if no mixer is set
@@ -57,12 +60,13 @@ class PipedSBCAudioSinkWithAlsaVolumeControl(SBCAudioSink):
 
     def raw_audio(self, data):
         # pipe to the play command
-        try:
-            self.process.stdin.write(data)
-        except:
-            # try to restart process on failure
-            self.startup()
-            self.process.stdin.write(data)
+        if self.process:
+            try:
+                self.process.stdin.write(data)
+            except Exception:
+                # try to restart process on failure
+                self.startup()
+                self.process.stdin.write(data)
 
     def volume(self, new_volume):
         if not config.getboolean('alsa', 'enabled'):
@@ -219,4 +223,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print('KeyboardInterrupt')
     except Exception as e:
-        print(e.message)
+        print(e)
