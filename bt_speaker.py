@@ -36,14 +36,15 @@ class PipedSBCAudioSinkWithAlsaVolumeControl(SBCAudioSink):
 
     def startup(self):
         # Start process
-        if config.has_option('bt_speaker', 'play_command'):
+        try:
+            play_command = config.get('bt_speaker', 'play_command')
             self.process = subprocess.Popen(
-                config.get('bt_speaker', 'play_command'),
+                play_command,
                 shell=True,
                 bufsize=2560,
                 stdin=subprocess.PIPE
             )
-        else:
+        except (configparser.NoOptionError, PermissionError):
             self.process = None
 
         if config.getboolean('alsa', 'enabled'):
